@@ -16,11 +16,11 @@
     <Authors>LANDIS-II Foundation</Authors>
     <Product>Landis.Extension.Succession.Biomass-v5</Product>
     <Copyright>Landis-II-Foundation</Copyright>
-    <Version>5.0</Version>
+    <Version>5.1</Version>
     <PackageTags>LANDIS-II;Landis;Extension;Biomass Succession</PackageTags>
     <Description></Description>
     <PackageReleaseNotes>.NET Standard 2.0 update</PackageReleaseNotes>
-    <FileVersion>7.0</FileVersion>
+    <FileVersion>5.1</FileVersion>
     <Company>LANDIS-II Foundation</Company>
   </PropertyGroup>
 
@@ -31,37 +31,28 @@
   
   <ItemGroup>
     <Reference Include="Landis.Library.AgeOnlyCohorts-v3">
-      <HintPath>lib\Landis.Library.AgeOnlyCohorts-v3.dll</HintPath>
-      <HintPath>..\..\Support-Library-Dlls\Edu.Wisc.Forest.Flel.Util.dll</HintPath>
+      <HintPath>..\..\Support-Library-Dlls-v7\Landis.Library.AgeOnlyCohorts-v3.dll</HintPath>
     </Reference>
     <Reference Include="Landis.Library.Biomass-v2">
-      <HintPath>lib\Landis.Library.Biomass-v2.dll</HintPath>
-      <HintPath>..\..\Support-Library-Dlls\Landis.Core.dll</HintPath>
+      <HintPath>..\..\Support-Library-Dlls-v7\Landis.Library.Biomass-v2.dll</HintPath>
     </Reference>
     <Reference Include="Landis.Library.BiomassCohorts-v3">
-      <HintPath>lib\Landis.Library.BiomassCohorts-v3.dll</HintPath>
-      <HintPath>..\..\Support-Library-Dlls\Landis.Library.AgeOnlyCohorts.dll</HintPath>
+      <HintPath>..\..\Support-Library-Dlls-v7\Landis.Library.BiomassCohorts-v3.dll</HintPath>
     </Reference>
     <Reference Include="Landis.Library.Climate-v3">
-      <HintPath>lib\Landis.Library.Climate-v3.dll</HintPath>
+      <HintPath>..\..\Support-Library-Dlls-v7\Landis.Library.Climate-v3.dll</HintPath>
     </Reference>
     <Reference Include="Landis.Library.Cohorts-v2">
-      <HintPath>lib\Landis.Library.Cohorts-v2.dll</HintPath>
+      <HintPath>..\..\Support-Library-Dlls-v7\Landis.Library.Cohorts-v2.dll</HintPath>
     </Reference>
     <Reference Include="Landis.Library.Metadata-v2">
-      <HintPath>lib\Landis.Library.Metadata-v2.dll</HintPath>
-      <HintPath>..\..\Support-Library-Dlls\Landis.Library.Climate.dll</HintPath>
+      <HintPath>..\..\Support-Library-Dlls-v7\Landis.Library.Metadata-v2.dll</HintPath>
     </Reference>
     <Reference Include="Landis.Library.Parameters-v2">
-      <HintPath>lib\Landis.Library.Parameters-v2.dll</HintPath>
-      <HintPath>..\..\Support-Library-Dlls\Landis.Library.Cohorts.dll</HintPath>
+      <HintPath>..\..\Support-Library-Dlls-v7\Landis.Library.Parameters-v2.dll</HintPath>
     </Reference>
     <Reference Include="Landis.Library.Succession-v6">
-      <HintPath>lib\Landis.Library.Succession-v6.dll</HintPath>
-      <HintPath>..\..\Support-Library-Dlls\Landis.Library.Metadata.dll</HintPath>
-    </Reference>
-    <Reference Include="Landis.Library.Succession-vAGB-Input">
-      <HintPath>..\..\..\..\..\Program Files\LANDIS-II\v6\bin\extensions\Landis.Library.Succession-vAGB-Input.dll</HintPath>
+      <HintPath>..\..\Library-Succession\src\bin\Debug\netstandard2.0\Landis.Library.Succession-v6.dll</HintPath>
     </Reference>
   </ItemGroup>
 </Project>
