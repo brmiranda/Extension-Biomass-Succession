@@ -371,7 +371,7 @@ namespace Landis.Extension.Succession.Biomass
         public Percentage ComputeNonWoodyPercentage(ICohort cohort,
                                                     ActiveSite site)
         {
-
+            ecoregion = PlugIn.ModelCore.Ecoregion[site];
             double mortalityAge = ComputeAgeMortality(cohort);
             double actualANPP = ComputeActualANPP(cohort, site); 
 

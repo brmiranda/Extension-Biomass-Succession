@@ -1,7 +1,7 @@
 LandisData   Extension
 
 Name         "Biomass Succession vAGB"
-Version      4.1
+Version      4.1.1
 Type         succession
 Assembly     Landis.Extension.Succession.Biomass_vAGB
 Class        Landis.Extension.Succession.Biomass.PlugIn

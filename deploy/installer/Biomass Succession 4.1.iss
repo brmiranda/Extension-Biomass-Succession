@@ -1,6 +1,6 @@
-#define PackageName      "Biomass Succession"
+#define PackageName      "Biomass Succession vAGB"
 #define PackageNameLong  "Biomass Succession Extension"
-#define Version          "4.1"
+#define Version          "4.1.1"
 #define ReleaseType      "official"
 #define CoreVersion      "6.0"
 #define CoreReleaseAbbr  ""
@@ -28,7 +28,7 @@ Source: {#ExtDir}\Landis.Library.Climate.dll; DestDir: {#ExtDir}; Flags: replace
 Source: {#ExtDir}\Landis.Library.Cohorts.dll; DestDir: {#ExtDir}; Flags: replacesameversion uninsneveruninstall
 Source: {#ExtDir}\Landis.Library.Metadata.dll; DestDir: {#ExtDir}; Flags: replacesameversion uninsneveruninstall
 Source: {#ExtDir}\Landis.Library.Parameters-v1.dll; DestDir: {#ExtDir}; Flags: replacesameversion uninsneveruninstall
-Source: ..\..\src\bin\Debug\Landis.Library.Succession-vAGB-Input.dll; DestDir: {#ExtDir}; Flags: replacesameversion uninsneveruninstall
+Source: {#ExtDir}\Landis.Library.Succession-vAGB-Input.dll; DestDir: {#ExtDir}; Flags: replacesameversion uninsneveruninstall
 Source: {#ExtDir}\Landis.Library.Parameters-v1.dll; DestDir: {#ExtDir}; Flags: replacesameversion uninsneveruninstall
 
 
