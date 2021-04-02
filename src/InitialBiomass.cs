@@ -157,6 +157,11 @@ namespace Landis.Extension.Succession.Biomass
                         biomassProvided = true;
                         break;
                     }
+                    else
+                    {
+                        if (biomassProvided)
+                            throw new System.ApplicationException(string.Format("Missing biomass value for {0} {1} in initial community: {2}", cohort.Species.Name, cohort.Age, initialCommunity.MapCode));
+                    }
                 }
             }
             if (biomassProvided)

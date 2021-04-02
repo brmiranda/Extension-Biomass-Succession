@@ -18,7 +18,6 @@ namespace Landis.Extension.Succession.Biomass
             public const string Timestep = "Timestep";
             public const string SeedingAlgorithm = "SeedingAlgorithm";
             public const string ClimateConfigFile = "ClimateConfigFile";
-            //public const string AgeOnlyDisturbanceParms = "AgeOnlyDisturbances:BiomassParameters";
             public const string DynamicInputFile = "DynamicInputFile";
             public const string CalibrateMode = "CalibrateMode";
             public const string FireReductionParameters = "FireReductionParameters";
@@ -316,8 +315,8 @@ namespace Landis.Extension.Succession.Biomass
             InputVar<double> wred_pr = new InputVar<double>("Coarse Litter Reduction");
             InputVar<double> lred_pr = new InputVar<double>("Fine Litter Reduction");
             //InputVar<double> som_red_pr = new InputVar<double>("SOM Reduction");
-            InputVar<double> cohortw_red_pr = new InputVar<double>("Cohort Biomass Removal");
-            //InputVar<double> cohortl_red_pr = new InputVar<double>("Cohort Leaf Removal");
+            InputVar<double> cohortw_red_pr = new InputVar<double>("Cohort Wood Removal");
+            InputVar<double> cohortl_red_pr = new InputVar<double>("Cohort Leaf Removal");
 
 
             while (!AtEndOfInput)
@@ -328,7 +327,7 @@ namespace Landis.Extension.Succession.Biomass
                 parameters.HarvestReductionsTable.Add(harvReduction);
 
                 ReadValue(prescriptionName, currentLine);
-                harvReduction.PrescriptionName = prescriptionName.Value;
+                harvReduction.Name = prescriptionName.Value;
 
                 ReadValue(wred_pr, currentLine);
                 harvReduction.CoarseLitterReduction = wred_pr.Value;
@@ -339,6 +338,8 @@ namespace Landis.Extension.Succession.Biomass
                 ReadValue(cohortw_red_pr, currentLine);
                 harvReduction.CohortWoodReduction = cohortw_red_pr.Value;
 
+                ReadValue(cohortl_red_pr, currentLine);
+                harvReduction.CohortLeafReduction = cohortl_red_pr.Value;
                 GetNextLine();
             }
 

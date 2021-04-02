@@ -8,6 +8,7 @@ using Landis.Library.InitialCommunities;
 using Landis.Library.BiomassCohorts;
 using System.Collections.Generic;
 using System.Linq;
+using System;
 using Landis.Library.Metadata;
 
 namespace Landis.Extension.Succession.Biomass
@@ -25,6 +26,8 @@ namespace Landis.Extension.Succession.Biomass
         public static int FutureClimateBaseYear;
         public static MetadataTable<SummaryLog> summaryLog;
         public static IInputParameters Parameters;
+        private ICommunity initialCommunity;
+
 
         //---------------------------------------------------------------------
 
@@ -77,6 +80,7 @@ namespace Landis.Extension.Succession.Biomass
             {
                 Climate.Initialize(Parameters.ClimateConfigFile, false, modelCore);
                 FutureClimateBaseYear = Climate.Future_MonthlyData.Keys.Min();
+                ClimateRegionData.Initialize(Parameters);
             }
 
             sufficientLight = Parameters.LightClassProbabilities;
@@ -107,7 +111,6 @@ namespace Landis.Extension.Succession.Biomass
 
             Landis.Library.BiomassCohorts.Cohort.DeathEvent += CohortTotalMortality;
             Landis.Library.BiomassCohorts.Cohort.PartialDeathEvent += CohortPartialMortality;
-            //AgeOnlyDisturbances.Module.Initialize(parameters.AgeOnlyDisturbanceParms);
 
             InitializeSites(Parameters.InitialCommunities, Parameters.InitialCommunitiesMap, modelCore);
         }
@@ -115,18 +118,15 @@ namespace Landis.Extension.Succession.Biomass
 
         //---------------------------------------------------------------------
 
-        protected override void InitializeSite(ActiveSite site,
-                                               ICommunity initialCommunity)
+        protected override void InitializeSite(ActiveSite site)//,ICommunity initialCommunity)
         {
             InitialBiomass initialBiomass = InitialBiomass.Compute(site, initialCommunity);
             SiteVars.Cohorts[site] = InitialBiomass.Clone((Library.BiomassCohorts.ISiteCohorts) initialBiomass.Cohorts); //.Clone();
             SiteVars.WoodyDebris[site] = initialBiomass.DeadWoodyPool.Clone();
             SiteVars.Litter[site] = initialBiomass.DeadNonWoodyPool.Clone();
         }
-
         //---------------------------------------------------------------------
-
-        public override void Run()
+         public override void Run()
         {
             if(PlugIn.ModelCore.CurrentTime == Timestep)
                 //Outputs.WriteLogFile(0);
@@ -135,6 +135,9 @@ namespace Landis.Extension.Succession.Biomass
                 SiteVars.CapacityReduction   = PlugIn.ModelCore.GetSiteVar<double>("Harvest.CapacityReduction");
 
             base.Run();
+
+            if (Timestep > 0 && Parameters.ClimateConfigFile != null)
+                ClimateRegionData.SetAllEcoregions_FutureAnnualClimate(ModelCore.CurrentTime);
 
             Outputs.WriteLogFile(PlugIn.ModelCore.CurrentTime);
 
@@ -149,8 +152,6 @@ namespace Landis.Extension.Succession.Biomass
                 }
             }
         }
-
-
         //---------------------------------------------------------------------
         // Revised 10/5/09 - BRM
 
@@ -197,25 +198,33 @@ namespace Landis.Extension.Succession.Biomass
 
             Landis.Library.BiomassCohorts.ICohort cohort = eventArgs.Cohort;
 
-            double fractionPartialMortality = (double) eventArgs.Reduction / (double) cohort.Biomass;
-            //PlugIn.ModelCore.UI.WriteLine("   BIOMASS SUCCESSION PARTIAL MORTALITY START: species={0}, age={1}, biomass={2}, fraction_mortality={3:0.00}.", cohort.Species.Name, cohort.Age, cohort.Biomass, fractionPartialMortality);
+            double partialMortality = (double)eventArgs.Reduction;
+            if (PlugIn.CalibrateMode && PlugIn.ModelCore.CurrentTime > 0)
+            {
+                PlugIn.ModelCore.UI.WriteLine("   BIOMASS SUCCESSION PARTIAL MORTALITY I: species={0}, age={1}, disturbance={2}.", cohort.Species.Name, cohort.Age, disturbanceType);
+                PlugIn.ModelCore.UI.WriteLine("   BIOMASS SUCCESSION PARTIAL MORTALITY I: eventReduction={0:0.0}, new_cohort_biomass={1}.", eventArgs.Reduction, cohort.Biomass);
+            }
+            double nonWoodyFraction = (double) cohort.ComputeNonWoodyBiomass(site) / (double) cohort.Biomass;
+            double woodyFraction = 1.0 - nonWoodyFraction;
 
-            int nonWoody = cohort.ComputeNonWoodyBiomass(site);
-            int woody = (cohort.Biomass - nonWoody);
+            float foliarInput = (float) (partialMortality * nonWoodyFraction); // ((float) nonWoody * (float) fractionPartialMortality);
+            float woodInput = (float)(partialMortality * woodyFraction); // ((float) woody * (float) fractionPartialMortality);
 
-            float foliarInput = ((float) nonWoody * (float) fractionPartialMortality);
-            float woodInput = ((float) woody * (float) fractionPartialMortality);
+            if (PlugIn.CalibrateMode && PlugIn.ModelCore.CurrentTime > 0)
+                PlugIn.ModelCore.UI.WriteLine("   BIOMASS SUCCESSION PARTIAL MORTALITY II: species={0}, age={1}, woodInput={2}, foliarInputs={3}.", cohort.Species.Name, cohort.Age, woodInput, foliarInput);
+
 
             if (disturbanceType.IsMemberOf("disturbance:harvest"))
             {
                 SiteVars.HarvestPrescriptionName = PlugIn.ModelCore.GetSiteVar<string>("Harvest.PrescriptionName");
                 if (!Disturbed[site]) // this is the first cohort killed/damaged
                 {
-                    HarvestEffects.ReduceLayers(SiteVars.HarvestPrescriptionName[site], site);
+                    HarvestEffects.ReduceLayers(site);
                 }
                 woodInput -= woodInput * (float)HarvestEffects.GetCohortWoodRemoval(site);
                 foliarInput -= foliarInput * (float)HarvestEffects.GetCohortLeafRemoval(site);
             }
+            //PlugIn.ModelCore.UI.WriteLine("   BIOMASS SUCCESSION PARTIAL MORTALITY: species={0}, age={1}, woodInput={2}, foliarInputs={3}.", cohort.Species.Name, cohort.Age, woodInput, foliarInput);
             if (disturbanceType.IsMemberOf("disturbance:fire"))
             {
 
@@ -235,11 +244,15 @@ namespace Landis.Extension.Succession.Biomass
                 foliarInput -= (float)foliarFireConsumption;
             }
 
+            if (PlugIn.CalibrateMode && PlugIn.ModelCore.CurrentTime > 0)
+                PlugIn.ModelCore.UI.WriteLine("   BIOMASS SUCCESSION PARTIAL MORTALITY III: ForestFloorInputs: Foliar={0:0.00}, Wood={1:0.0}.", foliarInput, woodInput);
+
             ForestFloor.AddWoody(woodInput, cohort.Species, site);
             ForestFloor.AddLitter(foliarInput, cohort.Species, site);
 
-            //PlugIn.ModelCore.UI.WriteLine("       BIOMASS SUCCESSION PARTIAL MORTALITY SUMMARY: Cohort Partial Mortality: species={0}, age={1}, disturbance={2}.", cohort.Species.Name, cohort.Age, disturbanceType);
-            //PlugIn.ModelCore.UI.WriteLine("           InputB/TotalB:  Foliar={0:0.00}/{1:0.00}, Wood={2:0.0}/{3:0.0}.", foliarInput, nonWoody, woodInput, woody);
+            if (disturbanceType != null)
+                Disturbed[site] = true;
+
 
             return;
         }
@@ -255,7 +268,8 @@ namespace Landis.Extension.Succession.Biomass
 
             if (disturbanceType != null)
             {
-                //PlugIn.ModelCore.UI.WriteLine("DISTURBANCE EVENT: Cohort Died: species={0}, age={1}, disturbance={2}.", cohort.Species.Name, cohort.Age, eventArgs.DisturbanceType);
+                if (PlugIn.CalibrateMode && PlugIn.ModelCore.CurrentTime > 0)
+                    PlugIn.ModelCore.UI.WriteLine("   BIOMASS SUCCESSION TOTAL MORTALITY: species={0}, age={1}, woodInput={2}, foliarInputs={3}.", cohort.Species.Name, cohort.Age, woodInput, foliarInput);
 
                 if (disturbanceType.IsMemberOf("disturbance:fire"))
                 {
@@ -282,7 +296,7 @@ namespace Landis.Extension.Succession.Biomass
                         SiteVars.HarvestPrescriptionName = PlugIn.ModelCore.GetSiteVar<string>("Harvest.PrescriptionName");
                         if (!Disturbed[site])  // the first cohort killed/damaged
                         {
-                            HarvestEffects.ReduceLayers(SiteVars.HarvestPrescriptionName[site], site);
+                            HarvestEffects.ReduceLayers(site);
                         }
                         woodInput -= (int)(woodInput * (float)HarvestEffects.GetCohortWoodRemoval(site));
                         foliarInput -= (int)(foliarInput * (float)HarvestEffects.GetCohortLeafRemoval(site));
@@ -348,7 +362,9 @@ namespace Landis.Extension.Succession.Biomass
                 CohortBiomass.SubYear = y - 1;
 
                 SiteVars.Cohorts[site].Grow(site, (y == years && isSuccessionTimestep));
+                double oldWood = SiteVars.WoodyDebris[site].Mass;
                 SiteVars.WoodyDebris[site].Decompose();
+                //PlugIn.ModelCore.UI.WriteLine("   DECOMPOSE: Former Wood = {0}, New Wood = {1}", oldWood, SiteVars.WoodyDebris[site].Mass);
                 SiteVars.Litter[site].Decompose();
             }
 
@@ -394,9 +410,29 @@ namespace Landis.Extension.Succession.Biomass
         /// This is a Delegate method to base succession.
         /// </summary>
 
-        public void AddNewCohort(ISpecies species, ActiveSite site)
+        public void AddNewCohort(ISpecies species, ActiveSite site, string reproductionType)
         {
             SiteVars.Cohorts[site].AddNewCohort(species, 1, CohortBiomass.InitialBiomass(species, SiteVars.Cohorts[site], site));
+            /*if (reproductionType == "plant")
+            {
+                if (!SiteVars.Cohorts[site].SpeciesEstablishedByPlant.Contains(species))
+                    SiteVars.Cohorts[site].SpeciesEstablishedByPlant.Add(species);
+            }
+            else if (reproductionType == "serotiny")
+            {
+                if (!SiteVars.Cohorts[site].SpeciesEstablishedBySerotiny.Contains(species))
+                    SiteVars.Cohorts[site].SpeciesEstablishedBySerotiny.Add(species);
+            }
+            else if (reproductionType == "resprout")
+            {
+                if (!SiteVars.Cohorts[site].SpeciesEstablishedByResprout.Contains(species))
+                    SiteVars.Cohorts[site].SpeciesEstablishedByResprout.Add(species);
+            }
+            else if (reproductionType == "seed")
+            {
+                if (!SiteVars.Cohorts[site].SpeciesEstablishedBySeed.Contains(species))
+                    SiteVars.Cohorts[site].SpeciesEstablishedBySeed.Add(species);
+            }*/
         }
         //---------------------------------------------------------------------
 
@@ -437,6 +473,40 @@ namespace Landis.Extension.Succession.Biomass
 
             return establishProbability > 0.0;
         }
+        public override void InitializeSites(string initialCommunitiesText, string initialCommunitiesMap, ICore modelCore)
+        {
+            ModelCore.UI.WriteLine("   Loading initial communities from file \"{0}\" ...", initialCommunitiesText);
+            Landis.Library.InitialCommunities.DatasetParser parser = new Landis.Library.InitialCommunities.DatasetParser(Timestep, ModelCore.Species);
+            Landis.Library.InitialCommunities.IDataset communities = Landis.Data.Load<Landis.Library.InitialCommunities.IDataset>(initialCommunitiesText, parser);
 
+            ModelCore.UI.WriteLine("   Reading initial communities map \"{0}\" ...", initialCommunitiesMap);
+            IInputRaster<uintPixel> map;
+            map = ModelCore.OpenRaster<uintPixel>(initialCommunitiesMap);
+            using (map)
+            {
+                uintPixel pixel = map.BufferPixel;
+                foreach (Site site in ModelCore.Landscape.AllSites)
+                {
+                    map.ReadBufferPixel();
+                    uint mapCode = pixel.MapCode.Value;
+                    if (!site.IsActive)
+                        continue;
+
+                    //if (!modelCore.Ecoregion[site].Active)
+                    //    continue;
+
+                    //modelCore.Log.WriteLine("ecoregion = {0}.", modelCore.Ecoregion[site]);
+
+                    ActiveSite activeSite = (ActiveSite)site;
+                    initialCommunity = communities.Find(mapCode);
+                    if (initialCommunity == null)
+                    {
+                        throw new ApplicationException(string.Format("Unknown map code for initial community: {0}", mapCode));
+    }
+
+                    InitializeSite(activeSite); 
+                }
+            }
+        }
     }
 }
