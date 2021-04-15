@@ -156,13 +156,14 @@ namespace Landis.Extension.Succession.Biomass
         private double ComputeActualANPP(ICohort cohort, ActiveSite site)
         {
             int siteBiomass = SiteVars.TotalBiomass[site];
+            ecoregion = PlugIn.ModelCore.Ecoregion[site];
 
             // ---------------------------------------------------------
             // Growth reduction ranges from 1.0 (total) to none (0.0).
             // Growth reduction is calculated by an disturbance function, typically an extension
             // with a dedicated calculator.  The method CohortGrowthReduction.Compute is a delegate method
             // and lives within the disturbance extension.
-           
+
             growthReduction = CohortGrowthReduction.Compute(cohort, site);
             
             double growthShape = SpeciesData.GrowthCurveShapeParm[cohort.Species];
